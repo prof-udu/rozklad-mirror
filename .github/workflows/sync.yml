@@ -1,0 +1,58 @@
+# sync.yml — автоматична синхронізація дзеркала розкладу.
+#
+# GitHub Actions періодично запускає sync.py, який зчитує розклад із
+# timetable.cgi і комітить оновлені JSON-файли в каталог data/.
+# Якщо сервер університету недоступний (блекаout) — запуск завершиться
+# помилкою, але дані в репозиторії лишаться з останнього вдалого запуску.
+# Тому розклад у боті й на сайті доступний цілодобово.
+#
+# Налаштування: жодних секретів не потрібно — працює на публічному
+# репозиторії одразу після завантаження проєкту на GitHub.
+
+name: Синхронізація розкладу
+
+on:
+  schedule:
+    # Кожні 2 години вдень за Києвом (05:00–21:00), рідше вночі.
+    # Час у cron — UTC. Зайві запуски не шкодять: якщо дані не змінилися,
+    # коміту не буде.
+    - cron: "17 3,5,7,9,11,13,15,17,19 * * *"
+  workflow_dispatch: {}   # ручний запуск з вкладки Actions
+
+permissions:
+  contents: write         # щоб commit/push оновлених даних
+
+concurrency:
+  group: schedule-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Встановити залежності
+        run: pip install -r sync/requirements.txt
+
+      - name: Синхронізувати розклад
+        working-directory: sync
+        # || true: помилка сервера університету (блекаут) не повинна
+        # падати весь workflow — дані лишаються з минулого разу
+        run: python3 sync.py --out ../data --faculty 0 --groups all --delay 0.3 || true
+
+      - name: Закомітити зміни (якщо є)
+        run: |
+          git config user.name "rozklad-sync"
+          git config user.email "rozklad-sync@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "Змін немає — коміт не потрібен."
+          else
+            git commit -m "Дзеркало розкладу: синхронізація $(date -u +%Y-%m-%d\ %H:%M\ UTC)"
+            git push
+          fi

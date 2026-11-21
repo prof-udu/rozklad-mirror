@@ -1,0 +1,50 @@
+# wrangler.toml — конфігурація бота розкладу для Cloudflare Workers.
+# Докладно про розгортання — у README.md у корені проєкту.
+
+name = "rozklad-bot"
+main = "worker.js"
+compatibility_date = "2025-10-01"
+
+# --- Змінні середовища (не секретні) ----------------------------------------
+[vars]
+BOT_USERNAME = "kpo_rozklad_bot"
+# Ваш Telegram-username адміністратора (без @) і числові ID через кому.
+# Свій ID бот покаже після команди /admin.
+ADMIN_USERNAME = "borys_shevchuk"
+ADMIN_IDS = ""
+# Базова адреса JSON-дзеркала. Замініть USER/REPO на ваш GitHub-репозиторій
+# (jsDelivr — CDN перед GitHub, працює швидко і стабільно):
+DATA_BASE = "https://cdn.jsdelivr.net/gh/USER/REPO@main/data"
+# Через скільки годин без оновлення дзеркала попереджати про застарілість:
+STALE_HOURS = "30"
+# Максимальна довжина довільного періоду, днів:
+MAX_PERIOD_DAYS = "92"
+# Довільний секретний рядок для сторінки реєстрації вебхука /setup:
+SETUP_KEY = "замініть-на-довгий-випадковий-рядок"
+
+# --- Вхід викладачів на сайті (редагування посилань) -------------------------
+# OAuth Client ID типу "Web application" з Google Cloud Console
+# (див. README, крок 5). Authorized JavaScript origins — адреса вашого сайту.
+GOOGLE_CLIENT_ID = "ЗАМІНІТЬ.apps.googleusercontent.com"
+# Корпоративний домен, яким дозволений вхід:
+ALLOWED_DOMAIN = "udu.edu.ua"
+# Email-адреси адміністраторів сайту через кому (можуть редагувати все,
+# керувати прив'язками викладачів):
+ADMIN_EMAILS = "ваша.адреса@udu.edu.ua"
+# Адреса сайту для CORS (або лишіть "*"):
+SITE_ORIGIN = "*"
+
+# --- База даних D1 (стан діалогів і користувачі) -----------------------------
+# Створюється командами (див. README):
+#   npx wrangler d1 create rozklad-bot-db
+#   npx wrangler d1 execute rozklad-bot-db --file=schema.sql
+# Після створення підставте виданий database_id:
+[[d1_databases]]
+binding = "DB"
+database_name = "rozklad-bot-db"
+database_id = "ЗАМІНІТЬ-ПІСЛЯ-СТВОРЕННЯ-БД"
+
+# --- Секрети (не вписуються сюди, задаються командами) -----------------------
+#   npx wrangler secret put BOT_TOKEN      # токен від @BotFather
+#   npx wrangler secret put TG_SECRET      # довільний рядок для перевірки вебхука
+#   npx wrangler secret put SESSION_SECRET # ключ підпису сесій сайту

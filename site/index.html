@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Електронний розклад — УДУ імені Михайла Драгоманова</title>
+<meta name="description" content="Електронний розклад УДУ імені Михайла Драгоманова — дзеркало розкладу занять. Працює, навіть коли сервер університету недоступний.">
+<link rel="icon" type="image/png" href="./logo-kpo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   Токени: академічна палітра — глибокий синій (navy) + пудрово-блакитний + ціан
+--------------------------------------------------------------------------- */
+:root {
+  --navy-900: oklch(0.28 0.09 264);   /* глибокий синій — основний текст */
+  --navy-700: oklch(0.38 0.09 264);
+  --navy-500: oklch(0.50 0.08 262);
+  --ink-muted: oklch(0.55 0.04 258);
+  --cyan-600: oklch(0.62 0.14 244);   /* акцент — мітки днів, активні стани */
+  --cyan-100: oklch(0.94 0.03 240);
+  --powder-300: oklch(0.82 0.07 250); /* пудрово-блакитний — розділювачі */
+  --powder-100: oklch(0.95 0.02 248);
+  --bg: oklch(0.985 0.005 250);
+  --surface: oklch(1 0 0);
+  --danger: oklch(0.55 0.19 30);
+  --radius: 14px;
+  --shadow: 0 1px 2px oklch(0.28 0.09 264 / 0.06), 0 8px 24px oklch(0.28 0.09 264 / 0.07);
+  --font: "DM Sans", -apple-system, "Segoe UI", "Noto Sans", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--navy-900);
+  background: var(--bg);
+  min-height: 100dvh;
+}
+::selection { background: var(--powder-300); color: var(--navy-900); }
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible {
+  outline: 2px solid var(--cyan-600);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Шапка
+--------------------------------------------------------------------------- */
+.site-header {
+  background: var(--navy-900);
+  color: oklch(0.96 0.02 250);
+}
+.site-header .wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 22px 20px 26px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.brand-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  flex: none;
+  filter: drop-shadow(0 2px 6px oklch(0.2 0.08 264 / 0.35));
+}
+.brand-text { min-width: 0; }
+.brand small {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: oklch(0.78 0.05 250);
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+.mirror-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.10);
+  color: oklch(0.88 0.04 250);
+  white-space: nowrap;
+}
+.mirror-badge .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: oklch(0.78 0.17 145);
+  flex: none;
+}
+.mirror-badge.stale .dot { background: var(--danger); }
+.mirror-badge.stale { color: oklch(0.95 0.06 60); }
+
+/* ---------------------------------------------------------------------------
+   Панель керування
+--------------------------------------------------------------------------- */
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+.controls {
+  margin: -18px auto 0;
+  position: relative;
+  z-index: 2;
+}
+.controls-inner {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
+.tabs {
+  display: inline-flex;
+  background: var(--powder-100);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+}
+.tabs button {
+  border: 0;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--navy-500);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+.tabs button svg { width: 17px; height: 17px; }
+.tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--navy-900);
+  box-shadow: 0 1px 4px oklch(0.28 0.09 264 / 0.15);
+}
+
+.search {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+.search input {
+  width: 100%;
+  border: 1.5px solid var(--powder-300);
+  border-radius: 999px;
+  padding: 10px 18px 10px 44px;
+  font-size: 16px;
+  background: var(--surface);
+  transition: border-color 160ms ease-out;
+}
+.search input::placeholder { color: var(--ink-muted); }
+.search input:focus { border-color: var(--cyan-600); outline: none; }
+.search > svg {
+  position: absolute;
+  left: 16px; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+.suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 5;
+}
+.suggestions[hidden] { display: none; }
+.suggestions li {
+  padding: 9px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.suggestions li[aria-selected="true"],
+.suggestions li:hover { background: var(--cyan-100); }
+.suggestions .empty { color: var(--ink-muted); cursor: default; }
+.suggestions .empty:hover { background: transparent; }
+
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  border: 1.5px solid var(--powder-300);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--navy-700);
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+.chip:hover { border-color: var(--cyan-600); color: var(--navy-900); }
+.chip[aria-pressed="true"] {
+  background: var(--navy-900);
+  border-color: var(--navy-900);
+  color: oklch(0.96 0.02 250);
+}
+.range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.range input[type="date"] {
+  border: 1.5px solid var(--powder-300);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--navy-900);
+}
+.range input[type="date"]:focus { border-color: var(--cyan-600); outline: none; }
+.range span { color: var(--ink-muted); font-size: 14px; }
+
+/* ---------------------------------------------------------------------------
+   Навігація тижнем + підпис вибраної сутності
+--------------------------------------------------------------------------- */
+.entity-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin: 26px 0 14px;
+}
+.entity-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.entity-kind {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cyan-600);
+  border: 1.5px solid var(--cyan-600);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.week-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.week-nav .label {
+  min-width: 190px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--navy-700);
+}
+.icon-btn {
+  border: 1.5px solid var(--powder-300);
+  background: var(--surface);
+  border-radius: 10px;
+  width: 38px; height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy-700);
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.icon-btn:hover { border-color: var(--cyan-600); background: var(--cyan-100); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+/* ---------------------------------------------------------------------------
+   Сітка тижня
+--------------------------------------------------------------------------- */
+.week {
+  display: grid;
+  /* гнучка кількість колонок: тиждень розкладається на 2–3 рядки,
+     один день — на всю ширину, без вузьких «овечих» колонок */
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+  padding-bottom: 40px;
+}
+.day {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.day.today { box-shadow: 0 0 0 2px var(--cyan-600), var(--shadow); }
+.day-header { text-align: center; }
+.day-header .wd {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cyan-600);
+}
+.day-header .dt {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--navy-900);
+  font-variant-numeric: tabular-nums;
+}
+.day.off .day-header .wd, .day.off .day-header .dt { color: var(--ink-muted); }
+
+.lesson {
+  border-top: 1px solid var(--powder-100);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lesson:first-of-type { border-top: 0; padding-top: 0; }
+.lesson .time {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy-900);
+}
+.lesson .subject {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+.lesson .meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+.lesson .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.type-pill {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--navy-700);
+  border: 1px solid var(--powder-300);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.pair-pill {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: oklch(0.98 0.01 250);
+  background: var(--navy-700);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.join-link {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyan-600);
+  text-decoration: none;
+  border-bottom: 1.5px solid transparent;
+  transition: border-color 150ms ease-out;
+  overflow-wrap: anywhere;
+}
+.join-link:hover { border-bottom-color: var(--cyan-600); }
+.day .free {
+  margin: auto;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 14px 0;
+}
+
+/* Список (довільний період / мобільний вигляд) */
+.list-view { display: none; padding-bottom: 40px; }
+.list-day {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.list-day .day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-align: left;
+  padding-bottom: 8px;
+}
+.list-day .day-header .wd { font-size: 14px; }
+.list-day .lessons { display: flex; flex-direction: column; gap: 12px; }
+.list-day .lesson { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-top: 1px solid var(--powder-100); padding-top: 12px; }
+.list-day .lesson .time { min-width: 96px; }
+.list-day .lesson .subject { flex: 1 1 220px; font-size: 15px; }
+
+/* Стани: завантаження, помилка, порожньо */
+.state-box {
+  text-align: center;
+  color: var(--ink-muted);
+  padding: 70px 20px 90px;
+  font-size: 16px;
+}
+.state-box .big { font-size: 20px; font-weight: 700; color: var(--navy-700); margin-bottom: 8px; }
+.state-box.error { color: var(--danger); }
+.spinner {
+  width: 34px; height: 34px;
+  border: 3px solid var(--powder-300);
+  border-top-color: var(--cyan-600);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+main { animation: fadeUp 240ms ease-out; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px) scale(0.995); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  main, .spinner { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Підвал
+--------------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--powder-100);
+  padding: 22px 20px 34px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+}
+.site-footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  align-items: center;
+}
+.site-footer a { color: var(--navy-700); }
+
+/* ---------------------------------------------------------------------------
+   Мобільна адаптація
+--------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .week { display: none; }
+  .list-view { display: block; }
+  .mirror-badge { margin-left: 0; }
+  .week-nav .label { min-width: 0; flex: 1; }
+  .week-nav { width: 100%; margin-left: 0; }
+  .entity-name { font-size: 18px; }
+  .controls-inner { padding: 14px; }
+  .brand { gap: 10px; font-size: 21px; }
+  .brand-logo { width: 52px; height: 52px; }
+  .brand small { font-size: 12.5px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <img class="brand-logo" src="./logo-udu.png" alt="Емблема УДУ імені Михайла Драгоманова" width="72" height="72">
+      <img class="brand-logo" src="./logo-kpo.png" alt="Логотип кафедри професійної освіти" width="72" height="72">
+      <div class="brand-text">
+        Електронний розклад
+        <small>УДУ імені Михайла Драгоманова · Кафедра професійної освіти</small>
+      </div>
+    </div>
+    <span class="mirror-badge" id="mirrorBadge" hidden>
+      <span class="dot" aria-hidden="true"></span>
+      <span id="mirrorText">Дзеркало</span>
+    </span>
+  </div>
+</header>
+
+<div class="wrap controls">
+  <div class="controls-inner">
+    <div class="tabs" role="tablist" aria-label="Хто переглядає розклад">
+      <button role="tab" aria-selected="true" id="tabGroup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+        Група
+      </button>
+      <button role="tab" aria-selected="false" id="tabTeacher">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+        Викладач
+      </button>
+    </div>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Почніть вводити назву групи…"
+             autocomplete="off" role="combobox" aria-expanded="false"
+             aria-controls="suggestions" aria-label="Пошук групи або викладача">
+      <ul class="suggestions" id="suggestions" role="listbox" hidden></ul>
+    </div>
+
+    <div class="periods" role="group" aria-label="Період перегляду">
+      <button class="chip" data-period="today" aria-pressed="false">Сьогодні</button>
+      <button class="chip" data-period="tomorrow" aria-pressed="false">Завтра</button>
+      <button class="chip" data-period="week" aria-pressed="true">Тиждень</button>
+      <button class="chip" data-period="nextweek" aria-pressed="false">Наст. тиждень</button>
+    </div>
+
+    <form class="range" id="rangeForm" aria-label="Довільний період">
+      <input type="date" id="dateFrom" aria-label="Дата початку періоду">
+      <span>—</span>
+      <input type="date" id="dateTo" aria-label="Дата кінця періоду">
+      <button class="chip" type="submit">Показати</button>
+    </form>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="entity-bar" id="entityBar" hidden>
+    <div class="entity-name">
+      <span class="entity-kind" id="entityKind">Група</span>
+      <span id="entityName"></span>
+    </div>
+    <div class="week-nav" id="weekNav">
+      <button class="icon-btn" id="prevPeriod" aria-label="Попередній період">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="label" id="periodLabel"></span>
+      <button class="icon-btn" id="nextPeriod" aria-label="Наступний період">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="state-box" id="stateBox">
+    <div class="big">Оберіть групу або викладача</div>
+    <div>Почніть вводити назву у полі пошуку вище — наприклад, «43ПОцт» або прізвище.</div>
+  </div>
+
+  <div class="week" id="weekView" hidden></div>
+  <div class="list-view" id="listView" hidden></div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Дзеркало розкладу оновлюється кілька разів на день і доступне навіть тоді, коли сервер університету вимкнений.</span>
+    <span>Джерело даних: <a href="https://nmc.udu.edu.ua/cgi-bin/timetable.cgi" rel="noopener">nmc.udu.edu.ua</a></span>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ===========================================================================
+   НАЛАШТУВАННЯ
+   DATA_BASE — адреса каталогу з JSON-дзеркалом.
+     Для локального прототипу лишіть "./data" (каталог data поруч із файлом).
+     У бойовому розгортанні — адреса вашого GitHub-репозиторію, напр.:
+     "https://cdn.jsdelivr.net/gh/USER/REPO@main/data"
+=========================================================================== */
+const DATA_BASE = "./data";
+const STALE_HOURS = 30;
+
+const LESSON_TYPES = {
+  "Л": "Лекція", "Лаб": "Лабораторна", "Пр": "Практичне",
+  "С": "Семінар", "Сем": "Семінар", "Конс": "Консультація",
+  "К": "Консультація", "Екз": "Екзамен", "Ісп": "Іспит", "З": "Залік",
+};
+const WD_SHORT = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+
+/* ----------------------------- стан застосунку ---------------------------- */
+const state = {
+  kind: "group",
+  index: [],              // довідник активної вкладки [{n, f}]
+  entity: null,
+  data: null,
+  meta: null,
+  period: "week",
+  anchor: kyivTodayISO(),
+  range: null,
+};
+
+/* ------------------------------- утиліти ---------------------------------- */
+function kyivTodayISO() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Kyiv", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+function isoToDate(iso) { return new Date(iso + "T00:00:00Z"); }
+function dateToISO(d) { return d.toISOString().slice(0, 10); }
+function addDays(iso, n) {
+  const d = isoToDate(iso); d.setUTCDate(d.getUTCDate() + n); return dateToISO(d);
+}
+function fmtISO(iso) { const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; }
+function fmtISOshort(iso) { const [y, m, d] = iso.split("-"); return `${d}.${m}`; }
+function weekBounds(iso) {
+  const d = isoToDate(iso);
+  const wd = (d.getUTCDay() + 6) % 7;
+  const mon = new Date(d); mon.setUTCDate(mon.getUTCDate() - wd);
+  const sun = new Date(mon); sun.setUTCDate(sun.getUTCDate() + 6);
+  return [dateToISO(mon), dateToISO(sun)];
+}
+function fmtStamp(stamp) {
+  const m = String(stamp).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}` : String(stamp);
+}
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+const $ = (id) => document.getElementById(id);
+
+async function fetchJson(path) {
+  const resp = await fetch(`${DATA_BASE}/${path}`, { cache: "no-cache" });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${path}`);
+  return resp.json();
+}
+
+/* ---------------------------- дзеркало: бейдж ----------------------------- */
+async function loadMeta() {
+  const badge = $("mirrorBadge");
+  try {
+    state.meta = await fetchJson("meta.json");
+    const ageH = (Date.now() - Date.parse(state.meta.updated_at)) / 36e5;
+    $("mirrorText").textContent = "Дані станом на " + fmtStamp(state.meta.updated_at);
+    badge.hidden = false;
+    if (!Number.isNaN(ageH) && ageH > STALE_HOURS) {
+      badge.classList.add("stale");
+      $("mirrorText").textContent += " · знімок застарів";
+    }
+  } catch (e) {
+    badge.hidden = false;
+    badge.classList.add("stale");
+    $("mirrorText").textContent = "Дзеркало недоступне";
+  }
+}
+
+/* ------------------------------- довідники -------------------------------- */
+async function loadIndex() {
+  state.index = state.kind === "group"
+    ? await fetchJson("groups.json")
+    : await fetchJson("teachers.json");
+}
+
+/* ------------------------------- підказки --------------------------------- */
+const searchInput = $("searchInput");
+const suggestionsEl = $("suggestions");
+let suggItems = [];
+let suggActive = -1;
+
+function renderSuggestions(items) {
+  suggItems = items;
+  suggActive = -1;
+  if (!items.length) {
+    suggestionsEl.innerHTML = '<li class="empty" role="option" aria-disabled="true">Нічого не знайдено у дзеркалі</li>';
+  } else {
+    suggestionsEl.innerHTML = items
+      .map((e, i) => `<li role="option" id="sugg-${i}" aria-selected="false" data-i="${i}">${esc(e.n)}</li>`)
+      .join("");
+  }
+  suggestionsEl.hidden = false;
+  searchInput.setAttribute("aria-expanded", "true");
+}
+function hideSuggestions() {
+  suggestionsEl.hidden = true;
+  searchInput.setAttribute("aria-expanded", "false");
+  searchInput.removeAttribute("aria-activedescendant");
+}
+function setActive(i) {
+  suggActive = i;
+  [...suggestionsEl.children].forEach((li, j) =>
+    li.setAttribute("aria-selected", String(j === i)));
+  if (i >= 0) searchInput.setAttribute("aria-activedescendant", "sugg-" + i);
+}
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (q.length < 1) { hideSuggestions(); return; }
+  renderSuggestions(state.index
+    .filter((e) => e.n.toLowerCase().includes(q)).slice(0, 12));
+});
+searchInput.addEventListener("keydown", (e) => {
+  if (suggestionsEl.hidden) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); setActive(Math.min(suggActive + 1, suggItems.length - 1)); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); setActive(Math.max(suggActive - 1, 0)); }
+  else if (e.key === "Enter" && suggActive >= 0) { e.preventDefault(); pickEntity(suggItems[suggActive]); }
+  else if (e.key === "Escape") hideSuggestions();
+});
+suggestionsEl.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-i]");
+  if (li) pickEntity(suggItems[Number(li.dataset.i)]);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search")) hideSuggestions();
+});
+searchInput.addEventListener("focus", () => {
+  const saved = loadSavedEntity();
+  if (!searchInput.value && state.index.length) renderSuggestions(
+    (saved ? [saved] : []).concat(state.index.filter((e) => e !== saved)).slice(0, 12));
+});
+
+/* --------------------------- вибір сутності ------------------------------- */
+function pickEntity(entry) {
+  if (!entry) return;
+  hideSuggestions();
+  searchInput.value = entry.n;
+  state.entity = entry;
+  saveEntity(entry);
+  $("entityKind").textContent = state.kind === "group" ? "Група" : "Викладач";
+  $("entityName").textContent = entry.n;
+  $("entityBar").hidden = false;
+  state.anchor = kyivTodayISO();
+  loadSchedule();
+}
+
+async function loadSchedule() {
+  showLoading();
+  try {
+    state.data = await fetchJson("schedules/" + state.entity.f);
+    render();
+  } catch (e) {
+    showError("Не вдалося завантажити розклад із дзеркала. Спробуйте пізніше.");
+  }
+}
+
+function saveEntity(entry) {
+  try { localStorage.setItem("rozklad:" + state.kind, JSON.stringify(entry)); } catch {}
+}
+function loadSavedEntity() {
+  try {
+    const raw = localStorage.getItem("rozklad:" + state.kind);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    return state.index.find((e) => e.n === saved.n) || null;
+  } catch { return null; }
+}
+
+/* ------------------------------- періоди ---------------------------------- */
+function currentRange() {
+  const t = kyivTodayISO();
+  switch (state.period) {
+    case "today": return [t, t];
+    case "tomorrow": return [addDays(t, 1), addDays(t, 1)];
+    case "week": return weekBounds(state.anchor);
+    case "nextweek": return weekBounds(addDays(state.anchor, 7));
+    case "range": return state.range;
+  }
+}
+function periodLabelText() {
+  const [d1, d2] = currentRange();
+  if (d1 === d2) return fmtISO(d1);
+  return `${fmtISOshort(d1)} — ${fmtISO(d2)}`;
+}
+
+document.querySelectorAll(".chip[data-period]").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    state.period = chip.dataset.period;
+    state.anchor = kyivTodayISO();
+    document.querySelectorAll(".chip[data-period]").forEach((c) =>
+      c.setAttribute("aria-pressed", String(c === chip)));
+    refreshRange();
+  });
+});
+$("prevPeriod").addEventListener("click", () => {
+  state.anchor = addDays(state.anchor, state.period === "week" || state.period === "nextweek" ? -7 : -1);
+  if (state.period === "today") { state.period = "range"; state.range = [state.anchor, state.anchor]; }
+  refreshRange();
+});
+$("nextPeriod").addEventListener("click", () => {
+  state.anchor = addDays(state.anchor, state.period === "week" || state.period === "nextweek" ? 7 : 1);
+  if (state.period === "today") { state.period = "range"; state.range = [state.anchor, state.anchor]; }
+  refreshRange();
+});
+$("rangeForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  let d1 = $("dateFrom").value, d2 = $("dateTo").value;
+  if (!d1 || !d2) { showError("Оберіть обидві дати періоду."); return; }
+  if (d2 < d1) [d1, d2] = [d2, d1];
+  if ((isoToDate(d2) - isoToDate(d1)) / 864e5 > 92) {
+    showError("Занадто довгий період — максимум 92 дні."); return;
+  }
+  state.period = "range";
+  state.range = [d1, d2];
+  document.querySelectorAll(".chip[data-period]").forEach((c) =>
+    c.setAttribute("aria-pressed", "false"));
+  refreshRange();
+});
+
+async function refreshRange() {
+  if (!state.data) return;
+  render();
+}
+
+/* ------------------------------- вкладки ---------------------------------- */
+function setKind(kind) {
+  if (state.kind === kind) return;
+  state.kind = kind;
+  try { localStorage.setItem("rozklad:kind", kind); } catch {}
+  state.entity = null;
+  state.data = null;
+  $("tabGroup").setAttribute("aria-selected", String(kind === "group"));
+  $("tabTeacher").setAttribute("aria-selected", String(kind === "teacher"));
+  searchInput.value = "";
+  searchInput.placeholder = kind === "group"
+    ? "Почніть вводити назву групи…" : "Почніть вводити прізвище викладача…";
+  $("entityBar").hidden = true;
+  hideViews();
+  showInfo("Оберіть " + (kind === "group" ? "групу" : "викладача"),
+           "Почніть вводити назву у полі пошуку вище.");
+  loadIndex().catch(() => showError("Не вдалося завантажити довідник із дзеркала."));
+}
+$("tabGroup").addEventListener("click", () => setKind("group"));
+$("tabTeacher").addEventListener("click", () => setKind("teacher"));
+
+/* ------------------------------ рендеринг --------------------------------- */
+function daysInRange() {
+  const [d1, d2] = currentRange();
+  const days = (state.data && state.data.days) || [];
+  return days.filter((d) => d.d >= d1 && d.d <= d2);
+}
+
+function lessonHtml(ls, dayISO) {
+  const pair = ls.n ? `<span class="pair-pill">${esc(ls.n)} пара</span>` : "";
+  const type = ls.t ? `<span class="type-pill">${esc(LESSON_TYPES[ls.t] || ls.t)}</span>` : "";
+  const who = state.kind === "group" ? ls.w : (ls.g || ls.w);
+  const whoHtml = who ? `<div class="meta">${esc(who)}</div>` : "";
+  const linkHtml = ls.l
+    ? `<a class="join-link" href="${esc(ls.l)}" target="_blank" rel="noopener">Приєднатися ↗</a>` : "";
+  return `<div class="lesson" data-day="${dayISO}" data-pair="${esc(ls.n)}">
+    <span class="time">${esc(ls.ts)}–${esc(ls.te)}</span>
+    <span class="subject">${esc(ls.s)}</span>
+    <span class="badges">${pair}${type}${linkHtml}</span>
+    ${whoHtml}
+  </div>`;
+}
+
+function renderWeek(d1, d2) {
+  const days = daysInRange();
+  const byDate = Object.fromEntries(days.map((d) => [d.d, d]));
+  const today = kyivTodayISO();
+  // рівно стільки днів, скільки обрано: один день — одна колонка,
+  // тиждень — 7 (сітка сама розкладе їх на 2–3 рядки), максимум 31
+  const span = Math.round((isoToDate(d2) - isoToDate(d1)) / 864e5) + 1;
+  const n = Math.max(1, Math.min(31, span));
+  let html = "";
+  for (let i = 0; i < n; i++) {
+    const iso = addDays(d1, i);
+    const wd = (isoToDate(iso).getUTCDay() + 6) % 7;
+    const day = byDate[iso];
+    const cls = ["day"];
+    if (iso === today) cls.push("today");
+    if (!day) cls.push("off");
+    html += `<section class="${cls.join(" ")}" aria-label="${WD_SHORT[wd]} ${fmtISO(iso)}">
+      <div class="day-header">
+        <div class="wd">${WD_SHORT[wd]}</div>
+        <div class="dt">${fmtISOshort(iso)}</div>
+      </div>
+      ${day ? day.lessons.map((ls) => lessonHtml(ls, iso)).join("") : '<div class="free">Занять немає</div>'}
+    </section>`;
+  }
+  return html;
+}
+
+function renderList() {
+  const days = daysInRange();
+  if (!days.length) return "";
+  return days.map((day) => `<section class="list-day">
+    <div class="day-header">
+      <span class="wd">${esc(day.wd)}</span>
+      <span class="dt">${fmtISO(day.d)}</span>
+    </div>
+    <div class="lessons">${day.lessons.map((ls) => lessonHtml(ls, day.d)).join("")}</div>
+  </section>`).join("");
+}
+
+function render() {
+  if (!state.data) return;
+  $("periodLabel").textContent = periodLabelText();
+  const [d1, d2] = currentRange();
+  const listHtml = renderList();
+  const emptyMsg = "У цьому періоді занять немає — вільний час.";
+  const horizonNote = state.meta && state.meta.from
+    ? ` Дзеркало охоплює ${fmtISO(state.meta.from)} — ${fmtISO(state.meta.to)}.` : "";
+
+  if (listHtml === "") {
+    hideViews();
+    showInfo("Занять немає", emptyMsg + horizonNote);
+    return;
+  }
+  $("stateBox").hidden = true;
+  $("weekView").innerHTML = renderWeek(d1, d2);
+  $("weekView").hidden = false;
+  $("listView").innerHTML = listHtml;
+  $("listView").hidden = false;
+}
+
+/* ------------------------------ стани UI ---------------------------------- */
+function hideViews() {
+  $("weekView").hidden = true;
+  $("listView").hidden = true;
+}
+function showInfo(title, text) {
+  hideViews();
+  $("stateBox").className = "state-box";
+  $("stateBox").innerHTML = `<div class="big">${esc(title)}</div><div>${esc(text)}</div>`;
+  $("stateBox").hidden = false;
+}
+function showError(text) {
+  hideViews();
+  $("stateBox").className = "state-box error";
+  $("stateBox").innerHTML = `<div class="big">Щось пішло не так</div><div>${esc(text)}</div>`;
+  $("stateBox").hidden = false;
+}
+function showLoading() {
+  hideViews();
+  $("stateBox").className = "state-box";
+  $("stateBox").innerHTML = '<div class="spinner" role="status" aria-label="Завантаження"></div>Завантажую розклад…';
+  $("stateBox").hidden = false;
+}
+
+/* -------------------------------- старт ----------------------------------- */
+(async function init() {
+  loadMeta();
+  // відновити останню вкладку (група/викладач)
+  try {
+    const k = localStorage.getItem("rozklad:kind");
+    if (k === "teacher" || k === "group") {
+      state.kind = k;
+      $("tabGroup").setAttribute("aria-selected", String(k === "group"));
+      $("tabTeacher").setAttribute("aria-selected", String(k === "teacher"));
+      searchInput.placeholder = k === "group"
+        ? "Почніть вводити назву групи…" : "Почніть вводити прізвище викладача…";
+    }
+  } catch {}
+  try {
+    state.index = await fetchJson(state.kind === "group" ? "groups.json" : "teachers.json");
+    const saved = loadSavedEntity();
+    if (saved) pickEntity(saved);
+  } catch (e) {
+    showError("Не вдалося завантажити дзеркало розкладу. " +
+              "Перевірте підключення до інтернету або спробуйте пізніше.");
+  }
+})();
+</script>
+</body>
+</html>
