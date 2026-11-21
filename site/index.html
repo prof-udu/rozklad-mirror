@@ -43,6 +43,10 @@ body {
 }
 ::selection { background: var(--powder-300); color: var(--navy-900); }
 
+/* атрибут hidden має бути сильнішим за display:grid/flex у стилях нижче —
+   інакше приховані блоки (тиждень, панель сутності) лишаються видимими */
+[hidden] { display: none !important; }
+
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible {
@@ -577,6 +581,7 @@ main { animation: fadeUp 240ms ease-out; }
   <div class="wrap">
     <span>Дзеркало розкладу оновлюється кілька разів на день і доступне навіть тоді, коли сервер університету вимкнений.</span>
     <span>Джерело даних: <a href="https://nmc.udu.edu.ua/cgi-bin/timetable.cgi" rel="noopener">nmc.udu.edu.ua</a></span>
+    <span>© Кафедра професійної освіти, УДУ імені Михайла Драгоманова</span>
   </div>
 </footer>
 
@@ -745,12 +750,20 @@ function pickEntity(entry) {
   loadSchedule();
 }
 
+let loadSeq = 0;
 async function loadSchedule() {
+  const seq = ++loadSeq;          // номер запиту: відповідь на старіший запит ігноруємо
+  state.data = null;
+  weekView.classList.add("hidden");
+  weekView.innerHTML = "";
   showLoading();
   try {
-    state.data = await fetchJson("schedules/" + state.entity.f);
+    const data = await fetchJson("schedules/" + state.entity.f);
+    if (seq !== loadSeq) return;  // користувач уже обрав іншого — не чіпаємо екран
+    state.data = data;
     render();
   } catch (e) {
+    if (seq !== loadSeq) return;
     showError("Не вдалося завантажити розклад із дзеркала. Спробуйте пізніше.");
   }
 }
@@ -808,8 +821,8 @@ $("rangeForm").addEventListener("submit", (e) => {
   let d1 = $("dateFrom").value, d2 = $("dateTo").value;
   if (!d1 || !d2) { showError("Оберіть обидві дати періоду."); return; }
   if (d2 < d1) [d1, d2] = [d2, d1];
-  if ((isoToDate(d2) - isoToDate(d1)) / 864e5 > 92) {
-    showError("Занадто довгий період — максимум 92 дні."); return;
+  if ((isoToDate(d2) - isoToDate(d1)) / 864e5 > 200) {
+    showError("Занадто довгий період — максимум 200 днів."); return;
   }
   state.period = "range";
   state.range = [d1, d2];
@@ -871,9 +884,9 @@ function renderWeek(d1, d2) {
   const byDate = Object.fromEntries(days.map((d) => [d.d, d]));
   const today = kyivTodayISO();
   // рівно стільки днів, скільки обрано: один день — одна колонка,
-  // тиждень — 7 (сітка сама розкладе їх на 2–3 рядки), максимум 31
+  // тиждень — 7, довільний період — уся сітка (запобіжна межа 400 днів)
   const span = Math.round((isoToDate(d2) - isoToDate(d1)) / 864e5) + 1;
-  const n = Math.max(1, Math.min(31, span));
+  const n = Math.max(1, Math.min(400, span));
   let html = "";
   for (let i = 0; i < n; i++) {
     const iso = addDays(d1, i);
@@ -929,7 +942,9 @@ function render() {
 /* ------------------------------ стани UI ---------------------------------- */
 function hideViews() {
   $("weekView").hidden = true;
+  $("weekView").innerHTML = "";   // прибираємо «історію» попереднього запиту з DOM
   $("listView").hidden = true;
+  $("listView").innerHTML = "";
 }
 function showInfo(title, text) {
   hideViews();
