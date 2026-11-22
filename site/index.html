@@ -594,7 +594,17 @@ main { animation: fadeUp 240ms ease-out; }
      У бойовому розгортанні — адреса вашого GitHub-репозиторію, напр.:
      "https://cdn.jsdelivr.net/gh/USER/REPO@main/data"
 =========================================================================== */
-const DATA_BASE = "./data";
+// У репозиторії GitHub дані лежать у корені (../data відносно site/) —
+// саме їх оновлює автосинхронізація. У локальній копії прототипу дані
+// лежать поруч (./data). На старті перевіряємо ../data і, якщо відповіді
+// немає, працюємо з ./data.
+let DATA_BASE = "./data";
+async function detectDataBase() {
+  try {
+    const r = await fetch("../data/meta.json", { cache: "no-cache" });
+    if (r.ok) DATA_BASE = "../data";
+  } catch (e) { /* лишаємо ./data */ }
+}
 const STALE_HOURS = 30;
 
 const LESSON_TYPES = {
@@ -967,6 +977,7 @@ function showLoading() {
 
 /* -------------------------------- старт ----------------------------------- */
 (async function init() {
+  await detectDataBase();
   loadMeta();
   // відновити останню вкладку (група/викладач)
   try {
